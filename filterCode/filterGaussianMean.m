@@ -1,4 +1,4 @@
-function [ estMean ] = filterGaussianMean(data, eps, tau, cher)
+function [ estMean ] = filterGaussianMean(data, eps, tau, cher, C)
 %filterGaussianMean Run the filter algorithm on a Gaussian
 %Suggested value of cher = 2.5
     [N, d] = size(data);
@@ -12,7 +12,7 @@ function [ estMean ] = filterGaussianMean(data, eps, tau, cher)
     v = U(:,1);
 
     %If the largest eigenvalue is about right, just return
-    if lambda < 1 + 3 * threshold
+    if lambda < 1 + C * threshold
        estMean = empiricalMean;
     %Otherwise, project in direction of v and filter
     else
@@ -32,7 +32,7 @@ function [ estMean ] = filterGaussianMean(data, eps, tau, cher)
         if i == 1 || i == N
             estMean = empiricalMean;
         else 
-            estMean = filterGaussianMean(sortedProjectedData(1:i, 2:end), eps, tau, cher);
+            estMean = filterGaussianMean(sortedProjectedData(1:i, 2:end), eps, tau, cher, C);
         end
     end
 end

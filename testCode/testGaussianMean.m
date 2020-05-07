@@ -30,7 +30,7 @@ for d = ds
     fprintf('...done\n')
     
     fprintf('Filter')
-    sumFilterErr = sumFilterErr + norm(filterGaussianMean(X, eps, tau, cher) - ones(1, d));
+    sumFilterErr = sumFilterErr + norm(filterGaussianMean(X, eps, tau, cher, 3) - ones(1, d));
     fprintf('...done\n')
     
     filterErr = [filterErr sumFilterErr];

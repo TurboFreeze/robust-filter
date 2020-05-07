@@ -4,6 +4,10 @@ eps = 0.1;
 tau = 0.1;
 cher = 2.5;
 
+C = 3;
+dpeps = 1.0;
+
+dpFilterErr = [];
 filterErr = [];
 medianErr = [];
 ransacErr = [];
@@ -11,11 +15,12 @@ LRVErr = [];
 sampErr = [];
 noisySampErr = []; 
 prunedErr = [];
-ds = 100:50:400;
+ds = 100:50:200; %400
 
 for d = ds
     N = 10*floor(d/eps^2);
     fprintf('Training with dimension = %d, number of samples = %d \n', d, round(N, 0))
+    sumDPFilterErr = 0;
     sumFilterErr = 0;
     sumMedErr = 0;
     sumRansacErr = 0;
@@ -23,6 +28,9 @@ for d = ds
     sumSampErr = 0;
     sumNoisySampErr = 0;
     sumPrunedErr = 0;
+    
+    % set tau
+    tau = 1 / N;
 
     X =  mvnrnd(zeros(1,d), eye(d), round((1-eps)*N)) + ones(round((1-eps)*N), d);
 
@@ -54,13 +62,18 @@ for d = ds
     fprintf('done\n')
 
     fprintf('LRV...')
-    sumLRVErr = sumLRVErr + norm(agnosticMeanGeneral(X, eps) - ones(1,d));
+    %sumLRVErr = sumLRVErr + norm(agnosticMeanGeneral(X, eps) - ones(1,d));
     fprintf('done\n')
 
     fprintf('Filter...')
-    sumFilterErr = sumFilterErr + norm(filterGaussianMean(X, eps, tau, cher) - ones(1, d));
+    sumFilterErr = sumFilterErr + norm(filterGaussianMean(X, eps, tau, cher, C) - ones(1, d));
+    fprintf('done\n')
+    
+    fprintf('DP Filter...')
+    sumDPFilterErr = sumDPFilterErr + norm(dpFilterGaussianMean(X, eps, tau, cher, C, dpeps) - ones(1, d));
     fprintf('done\n')
 
+    dpFilterErr = [dpFilterErr sumDPFilterErr];
     medianErr = [medianErr sumMedErr];
     ransacErr = [ransacErr sumRansacErr];
     filterErr = [filterErr sumFilterErr];
@@ -70,6 +83,7 @@ for d = ds
     prunedErr = [prunedErr sumPrunedErr];
 end
 
+dpFilterErr = dpFilterErr - sampErr;
 noisySampErr = noisySampErr - sampErr;
 prunedErr = prunedErr - sampErr;
 medianErr = medianErr - sampErr;
@@ -77,7 +91,7 @@ ransacErr = ransacErr - sampErr;
 LRVErr = LRVErr - sampErr;
 filterErr = filterErr - sampErr;
 
-plot(ds, noisySampErr, ds, prunedErr, ds, medianErr, '-ro', ds, ransacErr, ds, LRVErr, ds, filterErr, '-.b', 'LineWidth', 2)
+plot(ds, noisySampErr, ds, prunedErr, ds, medianErr, '-ro', ds, ransacErr, ds, LRVErr, ds, filterErr, ds, dpFilterErr, '-.b', 'LineWidth', 2)
 xlabel('Dimension')
 ylabel('Excess L2 error')
-legend('Sampling Error (with noise)', 'Naive Pruning', 'Geometric Median', 'RANSAC', 'LRV', 'Filter')
+legend('Sampling Error (with noise)', 'Naive Pruning', 'Geometric Median', 'RANSAC', 'LRV', 'Filter', 'DP Filter')
